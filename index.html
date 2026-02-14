@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Atlantis — Librería Online</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand">
+        <div class="logo">A</div>
+        <div>
+          <div class="title">Atlantis</div>
+          <div class="subtitle">Tienda de libros</div>
+        </div>
+      </div>
+      <div class="userbox">
+        <span id="userStatus">No autenticado</span>
+        <button id="logoutBtn" hidden>Cerrar sesión</button>
+      </div>
+    </header>
+
+    <main class="container">
+      <section class="card" id="loginCard">
+        <h1>Iniciar sesión</h1>
+        <form id="loginForm">
+          <input id="customerId" type="text" placeholder="ID de cliente" required />
+          <input id="password" type="password" placeholder="Contraseña" required />
+          <button type="submit">Entrar</button>
+        </form>
+        <p id="loginError" style="color:red;" hidden></p>
+      </section>
+
+      <section class="card" id="storeCard" hidden>
+        <h1>Catálogo Atlantis</h1>
+        <div id="booksGrid"></div>
+      </section>
+    </main>
+
+    <script src="app.js"></script>
+  </body>
+</html>
