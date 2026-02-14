@@ -4,39 +4,149 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Atlantis — Librería Online</title>
+    <meta name="description" content="Atlantis — tienda online de libros. Descubre, elige y compra tus próximos favoritos." />
+    <link rel="preconnect" href="https://images.unsplash.com">
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
     <header class="topbar">
-      <div class="brand">
+      <a class="brand" href="#" aria-label="Atlantis Home">
         <div class="logo">A</div>
-        <div>
+        <div class="brandText">
           <div class="title">Atlantis</div>
-          <div class="subtitle">Tienda de libros</div>
+          <div class="subtitle">Librería online</div>
         </div>
-      </div>
-      <div class="userbox">
-        <span id="userStatus">No autenticado</span>
-        <button id="logoutBtn" hidden>Cerrar sesión</button>
+      </a>
+
+      <div class="topActions">
+        <div class="pill" id="userPill">
+          <span class="dot" aria-hidden="true"></span>
+          <span id="userStatus">No autenticado</span>
+        </div>
+
+        <button class="iconBtn" id="cartBtn" title="Carrito" aria-label="Carrito">
+          <span class="icon">🛒</span>
+          <span class="badge" id="cartCount">0</span>
+        </button>
+
+        <button class="btn btn-ghost" id="logoutBtn" hidden>Cerrar sesión</button>
       </div>
     </header>
 
-    <main class="container">
-      <section class="card" id="loginCard">
-        <h1>Iniciar sesión</h1>
-        <form id="loginForm">
-          <input id="customerId" type="text" placeholder="ID de cliente" required />
-          <input id="password" type="password" placeholder="Contraseña" required />
-          <button type="submit">Entrar</button>
-        </form>
-        <p id="loginError" style="color:red;" hidden></p>
+    <main>
+      <section class="hero">
+        <div class="heroOverlay"></div>
+        <div class="heroInner">
+          <div class="heroCard">
+            <h1>Tu próxima lectura te espera</h1>
+            <p>
+              Explora el catálogo de Atlantis, filtra por género y compra en un clic.
+              (Demo)
+            </p>
+
+            <div class="heroStats">
+              <div class="stat">
+                <div class="statNum" id="statBooks">—</div>
+                <div class="statLbl">Libros</div>
+              </div>
+              <div class="stat">
+                <div class="statNum" id="statInStock">—</div>
+                <div class="statLbl">En stock</div>
+              </div>
+              <div class="stat">
+                <div class="statNum" id="statGenres">—</div>
+                <div class="statLbl">Géneros</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="loginCard card" id="loginCard">
+            <div class="cardHeader">
+              <h2>Iniciar sesión</h2>
+              <p class="muted">Valida tu cliente contra tu API en AWS.</p>
+            </div>
+
+            <form id="loginForm" class="form">
+              <label>
+                <span>ID de cliente</span>
+                <input id="customerId" type="text" placeholder="1111" autocomplete="username" required />
+              </label>
+
+              <label>
+                <span>Contraseña</span>
+                <input id="password" type="password" placeholder="••••" autocomplete="current-password" required />
+              </label>
+
+              <button class="btn" type="submit" id="loginBtn">Entrar</button>
+              <p class="error" id="loginError" hidden></p>
+
+              <div class="hint">
+                Endpoint demo:
+                <code id="endpointLabel"></code>
+              </div>
+            </form>
+          </div>
+        </div>
       </section>
 
-      <section class="card" id="storeCard" hidden>
-        <h1>Catálogo Atlantis</h1>
-        <div id="booksGrid"></div>
+      <section class="container">
+        <section class="store card" id="storeCard" hidden>
+          <div class="storeTop">
+            <div>
+              <h2>Catálogo</h2>
+              <p class="muted">Elige, filtra y compra. (Simulación)</p>
+            </div>
+
+            <div class="filters">
+              <input id="searchInput" type="text" placeholder="Buscar por título o autor…" />
+              <select id="genreSelect">
+                <option value="">Todos los géneros</option>
+              </select>
+              <label class="checkbox">
+                <input type="checkbox" id="inStockOnly" />
+                <span>Solo en stock</span>
+              </label>
+              <button class="btn btn-ghost" id="refreshBtn">Actualizar</button>
+            </div>
+          </div>
+
+          <div class="grid" id="booksGrid"></div>
+
+          <div class="storeFooter">
+            <span class="muted" id="booksCount"></span>
+            <p class="error" id="booksError" hidden></p>
+          </div>
+        </section>
       </section>
     </main>
+
+    <!-- Drawer carrito -->
+    <aside class="drawer" id="cartDrawer" aria-hidden="true">
+      <div class="drawerOverlay" id="cartOverlay"></div>
+      <div class="drawerPanel" role="dialog" aria-modal="true" aria-label="Carrito">
+        <div class="drawerHeader">
+          <div>
+            <h3>Tu carrito</h3>
+            <p class="muted" id="cartSubtitle">0 artículos</p>
+          </div>
+          <button class="iconBtn" id="cartCloseBtn" aria-label="Cerrar carrito">✕</button>
+        </div>
+
+        <div class="drawerBody" id="cartItems"></div>
+
+        <div class="drawerFooter">
+          <div class="totalRow">
+            <span>Total</span>
+            <strong id="cartTotal">0 €</strong>
+          </div>
+          <button class="btn" id="checkoutBtn">Finalizar compra</button>
+          <button class="btn btn-ghost" id="clearCartBtn">Vaciar carrito</button>
+          <p class="muted tiny">
+            * Demo: no procesa pagos. Solo simula la compra.
+          </p>
+        </div>
+      </div>
+    </aside>
 
     <script src="app.js"></script>
   </body>

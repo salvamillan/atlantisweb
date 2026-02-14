@@ -1,14 +1,26 @@
-# Atlantis Bookstore
+# Atlantis — Bookstore Demo (Modern UI)
 
-Demo frontend for Atlantis bookstore.
+Static website to simulate a bookstore called **Atlantis**, ready for **GitHub Pages**.
 
-## Features
-- Login against AWS API endpoint
-- Fetch books from DynamoDB via Lambda
-- Ready to deploy on GitHub Pages
+## What it does
+- Login against your AWS endpoint:
+  - `GET /getClientDetails?id=...`
+  - Validates password on the frontend (demo)
+- Loads catalog from:
+  - `GET /getBooks`
+- Modern UI with bookstore photos (Unsplash) and a cart drawer
+- "Comprar" button per book (simulated checkout)
 
-## Deployment
-1. Upload files to GitHub repository
-2. Go to Settings → Pages
-3. Select branch main and root folder
-4. Save and access your GitHub Pages URL
+## Configure endpoints
+Edit `app.js`:
+- `API_BASE`
+- `ENDPOINT_GET_CLIENT`
+- `ENDPOINT_GET_BOOKS`
+
+## Deploy on GitHub Pages
+1. Push these files to a GitHub repo
+2. Settings → Pages → Deploy from branch → `main` / root
+3. Open your GitHub Pages URL
+
+## Notes
+- For production: do NOT return/store passwords. Use a login endpoint that returns a token.
