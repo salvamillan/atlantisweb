@@ -24,3 +24,8 @@ Edit `app.js`:
 
 ## Notes
 - For production: do NOT return/store passwords. Use a login endpoint that returns a token.
+
+## Orders page
+- After login, user can open **Mis pedidos**.
+- Loads orders from:
+  - `GET /getordersbyclient?idcliente=...`

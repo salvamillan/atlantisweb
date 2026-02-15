@@ -402,3 +402,45 @@ code{
   gap: 10px;
 }
 .totalRow{ display:flex; justify-content: space-between; align-items:center; }
+
+/* Orders */
+.ordersTop{
+  margin-top: 14px;
+  display:flex;
+  justify-content: space-between;
+  align-items:center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.ordersTableWrap{
+  margin-top: 12px;
+  border:1px solid var(--stroke);
+  background: rgba(255,255,255,.03);
+  border-radius: 16px;
+  overflow:auto;
+}
+.ordersTable{
+  width:100%;
+  border-collapse: collapse;
+  min-width: 720px;
+}
+.ordersTable th, .ordersTable td{
+  padding: 12px 12px;
+  border-bottom: 1px solid rgba(255,255,255,.06);
+  text-align:left;
+  font-size: 13px;
+}
+.ordersTable th{
+  color: var(--muted);
+  font-weight: 800;
+}
+.orderPill{
+  display:inline-block;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border:1px solid var(--stroke);
+  background: rgba(255,255,255,.03);
+  color: var(--text);
+  font-weight: 900;
+  font-size: 12px;
+}

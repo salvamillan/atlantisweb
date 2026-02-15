@@ -23,13 +23,7 @@
           <span class="dot" aria-hidden="true"></span>
           <span id="userStatus">No autenticado</span>
         </div>
-
-        <button class="iconBtn" id="cartBtn" title="Carrito" aria-label="Carrito">
-          <span class="icon">🛒</span>
-          <span class="badge" id="cartCount">0</span>
-        </button>
-
-        <button class="btn btn-ghost" id="logoutBtn" hidden>Cerrar sesión</button>
+<button class="btn btn-ghost" id="logoutBtn" hidden>Cerrar sesión</button>
       </div>
     </header>
 
@@ -93,11 +87,13 @@
         <section class="store card" id="storeCard" hidden>
           <div class="storeTop">
             <div>
-              <h2>Catálogo</h2>
-              <p class="muted">Elige, filtra y compra. (Simulación)</p>
+              <h2 id="pageTitle">Catálogo</h2>
+              <p class="muted" id="pageSubtitle">Elige, filtra y compra. (Simulación)</p>
             </div>
 
             <div class="filters">
+              <button class="btn btn-ghost" id="navCatalogBtn">Catálogo</button>
+              <button class="btn btn-ghost" id="navOrdersBtn">Mis pedidos</button>
               <input id="searchInput" type="text" placeholder="Buscar por título o autor…" />
               <select id="genreSelect">
                 <option value="">Todos los géneros</option>
@@ -112,6 +108,30 @@
 
           <div class="grid" id="booksGrid"></div>
 
+          <!-- Orders view (hidden by default) -->
+          <section class="orders" id="ordersView" hidden>
+            <div class="ordersTop">
+              <div class="muted">Estos son tus pedidos (según tu usuario).</div>
+              <button class="btn btn-ghost" id="refreshOrdersBtn">Actualizar pedidos</button>
+            </div>
+
+            <div class="ordersTableWrap">
+              <table class="ordersTable">
+                <thead>
+                  <tr>
+                    <th>Nº pedido</th>
+                    <th>Fecha</th>
+                    <th>Estado</th>
+                    <th>Artículo</th>
+                  </tr>
+                </thead>
+                <tbody id="ordersTbody"></tbody>
+              </table>
+            </div>
+
+            <p class="error" id="ordersError" hidden></p>
+          </section>
+
           <div class="storeFooter">
             <span class="muted" id="booksCount"></span>
             <p class="error" id="booksError" hidden></p>
@@ -119,35 +139,6 @@
         </section>
       </section>
     </main>
-
-    <!-- Drawer carrito -->
-    <aside class="drawer" id="cartDrawer" aria-hidden="true">
-      <div class="drawerOverlay" id="cartOverlay"></div>
-      <div class="drawerPanel" role="dialog" aria-modal="true" aria-label="Carrito">
-        <div class="drawerHeader">
-          <div>
-            <h3>Tu carrito</h3>
-            <p class="muted" id="cartSubtitle">0 artículos</p>
-          </div>
-          <button class="iconBtn" id="cartCloseBtn" aria-label="Cerrar carrito">✕</button>
-        </div>
-
-        <div class="drawerBody" id="cartItems"></div>
-
-        <div class="drawerFooter">
-          <div class="totalRow">
-            <span>Total</span>
-            <strong id="cartTotal">0 €</strong>
-          </div>
-          <button class="btn" id="checkoutBtn">Finalizar compra</button>
-          <button class="btn btn-ghost" id="clearCartBtn">Vaciar carrito</button>
-          <p class="muted tiny">
-            * Demo: no procesa pagos. Solo simula la compra.
-          </p>
-        </div>
-      </div>
-    </aside>
-
-    <script src="app.js"></script>
+<script src="app.js"></script>
   </body>
 </html>

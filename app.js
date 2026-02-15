@@ -3,6 +3,7 @@
 const API_BASE = "https://tpipaxfpf1.execute-api.eu-north-1.amazonaws.com";
 const ENDPOINT_GET_CLIENT = `${API_BASE}/getClientDetails`; // GET ?id=
 const ENDPOINT_GET_BOOKS = `${API_BASE}/getBooks`;          // GET
+const ENDPOINT_GET_ORDERS = `${API_BASE}/getordersbyclient`; // GET ?idcliente=
 
 // UI refs
 const loginCard = document.getElementById("loginCard");
@@ -24,32 +25,29 @@ const searchInput = document.getElementById("searchInput");
 const genreSelect = document.getElementById("genreSelect");
 const inStockOnly = document.getElementById("inStockOnly");
 
+// Stats
 const statBooks = document.getElementById("statBooks");
 const statInStock = document.getElementById("statInStock");
 const statGenres = document.getElementById("statGenres");
 
-const cartBtn = document.getElementById("cartBtn");
-const cartCount = document.getElementById("cartCount");
-const cartDrawer = document.getElementById("cartDrawer");
-const cartOverlay = document.getElementById("cartOverlay");
-const cartCloseBtn = document.getElementById("cartCloseBtn");
-const cartItemsEl = document.getElementById("cartItems");
-const cartTotalEl = document.getElementById("cartTotal");
-const cartSubtitle = document.getElementById("cartSubtitle");
-const checkoutBtn = document.getElementById("checkoutBtn");
-const clearCartBtn = document.getElementById("clearCartBtn");
+// Nav + Orders UI
+const navCatalogBtn = document.getElementById("navCatalogBtn");
+const navOrdersBtn = document.getElementById("navOrdersBtn");
+const pageTitle = document.getElementById("pageTitle");
+const pageSubtitle = document.getElementById("pageSubtitle");
+
+const ordersView = document.getElementById("ordersView");
+const refreshOrdersBtn = document.getElementById("refreshOrdersBtn");
+const ordersTbody = document.getElementById("ordersTbody");
+const ordersError = document.getElementById("ordersError");
 
 endpointLabel.textContent = `${ENDPOINT_GET_CLIENT}?id=1111`;
 
 const SESSION_KEY = "atlantis_session_v1";
-const CART_KEY = "atlantis_cart_v1";
 
 function setSession(session){ localStorage.setItem(SESSION_KEY, JSON.stringify(session)); }
 function getSession(){ try { return JSON.parse(localStorage.getItem(SESSION_KEY)); } catch { return null; } }
 function clearSession(){ localStorage.removeItem(SESSION_KEY); }
-
-function getCart(){ try { return JSON.parse(localStorage.getItem(CART_KEY)) || []; } catch { return []; } }
-function setCart(cart){ localStorage.setItem(CART_KEY, JSON.stringify(cart)); }
 
 function showError(el, msg){ el.textContent = msg; el.hidden = false; }
 function hideError(el){ el.textContent = ""; el.hidden = true; }
@@ -87,7 +85,7 @@ async function login(customerId, password){
   }
 
   const { password: _pw, ...safeCustomer } = customer;
-  setSession({ customer: safeCustomer, loggedInAt: Date.now() });
+  setSession({ customer: safeCustomer, loginId: String(customerId), loggedInAt: Date.now() });
   return safeCustomer;
 }
 
@@ -107,6 +105,34 @@ function setLoggedOutUI(){
   userStatus.textContent = "No autenticado";
   userPill.classList.remove("authed");
   logoutBtn.hidden = true;
+}
+
+/* -------------------- NAV -------------------- */
+function setPage(mode){
+  const isOrders = mode === "orders";
+
+  if(isOrders){
+    pageTitle.textContent = "Mis pedidos";
+    pageSubtitle.textContent = "Histórico de pedidos asociados a tu cuenta.";
+  }else{
+    pageTitle.textContent = "Catálogo";
+    pageSubtitle.textContent = "Elige, filtra y compra. (Simulación)";
+  }
+
+  ordersView.hidden = !isOrders;
+  booksGrid.hidden = isOrders;
+
+  // Desactivar filtros en vista pedidos
+  searchInput.disabled = isOrders;
+  genreSelect.disabled = isOrders;
+  inStockOnly.disabled = isOrders;
+  refreshBtn.disabled = isOrders;
+}
+
+function getAuthedClientId(){
+  const s = getSession();
+  const c = s?.customer || {};
+  return String(c.idcliente ?? s?.loginId ?? "");
 }
 
 /* -------------------- BOOKS -------------------- */
@@ -153,15 +179,6 @@ function applyFilters(books){
   });
 }
 
-function coverClassFromGenre(genre){
-  const g = String(genre || "").toLowerCase();
-  if(g.includes("suspense")) return "g-suspense";
-  if(g.includes("romance")) return "g-romance";
-  if(g.includes("fant")) return "g-fantasy";
-  if(g.includes("hist")) return "g-history";
-  return "g-default";
-}
-
 function renderBooks(books, total){
   booksGrid.innerHTML = "";
   booksCount.textContent = `Mostrando ${books.length} de ${total}`;
@@ -204,13 +221,13 @@ function renderBooks(books, total){
     booksGrid.appendChild(el);
   }
 
-  // Wire buy buttons
+  // Comprar (sin carrito): por ahora solo selecciona el libro
   booksGrid.querySelectorAll(".buyBtn").forEach(btn => {
     btn.addEventListener("click", () => {
       const id = btn.getAttribute("data-bookid");
       const book = lastBooksPayload?.books?.find(x => String(x.id) === String(id));
-      if(book) addToCart(book, 1);
-      openCart();
+      if(!book) return;
+      alert(`Libro seleccionado:\n\n${book.titulo}\n${book.autor}\n\n(Checkout sin carrito pendiente)`);
     });
   });
 }
@@ -238,136 +255,69 @@ async function loadBooksAndRender(){
   }
 }
 
-/* -------------------- CART -------------------- */
-function cartItemKey(book){
-  return String(book.id);
+/* -------------------- ORDERS -------------------- */
+async function fetchOrdersByClient(idcliente){
+  const url = `${ENDPOINT_GET_ORDERS}?idcliente=${encodeURIComponent(idcliente)}`;
+  const resp = await fetch(url, { method: "GET" });
+  const data = await resp.json().catch(() => ({}));
+  if(!resp.ok) throw new Error(data?.message || `Error HTTP ${resp.status}`);
+  if(!Array.isArray(data?.orders)) throw new Error("Respuesta inválida: falta orders[]");
+  return data.orders;
 }
 
-function addToCart(book, qty){
-  const cart = getCart();
-  const key = cartItemKey(book);
-  const existing = cart.find(i => i.key === key);
-  const stock = Number(book.stock ?? 0);
-  if(existing){
-    existing.qty = Math.min(existing.qty + qty, stock || existing.qty + qty);
-  }else{
-    cart.push({
-      key,
-      id: String(book.id),
-      titulo: String(book.titulo ?? ""),
-      autor: String(book.autor ?? ""),
-      precio: Number(book.precio ?? 0),
-      genero: String(book.genero ?? ""),
-      qty: Math.min(qty, stock || qty)
-    });
-  }
-  setCart(cart);
-  updateCartUI();
+function findBookTitle(idarticulo){
+  const b = lastBooksPayload?.books?.find(x => String(x.id) === String(idarticulo));
+  return b?.titulo || `Libro ${idarticulo}`;
 }
 
-function removeFromCart(key){
-  const cart = getCart().filter(i => i.key !== key);
-  setCart(cart);
-  updateCartUI();
-}
+function renderOrders(orders){
+  ordersTbody.innerHTML = "";
 
-function changeQty(key, delta){
-  const cart = getCart();
-  const item = cart.find(i => i.key === key);
-  if(!item) return;
-
-  // enforce stock if we can find book
-  const book = lastBooksPayload?.books?.find(x => String(x.id) === String(item.id));
-  const stock = Number(book?.stock ?? item.qty + delta);
-
-  item.qty = item.qty + delta;
-  if(item.qty <= 0){
-    removeFromCart(key);
-    return;
-  }
-  item.qty = Math.min(item.qty, stock || item.qty);
-
-  setCart(cart);
-  updateCartUI();
-}
-
-function calcCart(){
-  const cart = getCart();
-  const count = cart.reduce((s,i) => s + (Number(i.qty)||0), 0);
-  const total = cart.reduce((s,i) => s + (Number(i.qty)||0) * (Number(i.precio)||0), 0);
-  return { cart, count, total };
-}
-
-function updateCartUI(){
-  const { cart, count, total } = calcCart();
-  cartCount.textContent = String(count);
-  cartSubtitle.textContent = `${count} artículo${count === 1 ? "" : "s"}`;
-  cartTotalEl.textContent = formatEUR(total);
-
-  cartItemsEl.innerHTML = "";
-  if(cart.length === 0){
-    cartItemsEl.innerHTML = `<div class="muted">Tu carrito está vacío.</div>`;
+  if(orders.length === 0){
+    ordersTbody.innerHTML = `<tr><td colspan="4" class="muted">No tienes pedidos todavía.</td></tr>`;
     return;
   }
 
-  for(const item of cart){
-    const row = document.createElement("div");
-    row.className = "cartItem";
-    row.innerHTML = `
-      <div>
-        <div class="name">${escapeHtml(item.titulo)}</div>
-        <div class="sub">${escapeHtml(item.autor)} • ${escapeHtml(item.genero)} • ${formatEUR(item.precio)}</div>
-        <button class="btn btn-ghost tinyBtn" data-remove="${escapeHtml(item.key)}" style="margin-top:10px; padding:8px 10px; border-radius:12px;">Eliminar</button>
-      </div>
-      <div class="qtyRow">
-        <button class="qtyBtn" aria-label="Restar" data-dec="${escapeHtml(item.key)}">−</button>
-        <strong>${item.qty}</strong>
-        <button class="qtyBtn" aria-label="Sumar" data-inc="${escapeHtml(item.key)}">+</button>
-      </div>
+  const sorted = [...orders].sort((a,b) => Number(b.ordernumber||0) - Number(a.ordernumber||0));
+
+  for(const o of sorted){
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td><span class="orderPill">#${escapeHtml(o.ordernumber ?? "")}</span></td>
+      <td>${escapeHtml(o.fechadecompra ?? "")}</td>
+      <td>${escapeHtml(o.estado ?? "")}</td>
+      <td>${escapeHtml(findBookTitle(o.idarticulo ?? ""))}</td>
     `;
-    cartItemsEl.appendChild(row);
+    ordersTbody.appendChild(tr);
   }
-
-  cartItemsEl.querySelectorAll("[data-remove]").forEach(b => {
-    b.addEventListener("click", () => removeFromCart(b.getAttribute("data-remove")));
-  });
-  cartItemsEl.querySelectorAll("[data-dec]").forEach(b => {
-    b.addEventListener("click", () => changeQty(b.getAttribute("data-dec"), -1));
-  });
-  cartItemsEl.querySelectorAll("[data-inc]").forEach(b => {
-    b.addEventListener("click", () => changeQty(b.getAttribute("data-inc"), +1));
-  });
 }
 
-function openCart(){
-  cartDrawer.classList.add("open");
-  cartDrawer.setAttribute("aria-hidden","false");
-}
-function closeCart(){
-  cartDrawer.classList.remove("open");
-  cartDrawer.setAttribute("aria-hidden","true");
-}
+async function loadOrdersAndRender(){
+  hideError(ordersError);
 
-cartBtn.addEventListener("click", openCart);
-cartOverlay.addEventListener("click", closeCart);
-cartCloseBtn.addEventListener("click", closeCart);
-
-checkoutBtn.addEventListener("click", () => {
-  const { cart, count, total } = calcCart();
-  if(count === 0){
-    alert("Tu carrito está vacío.");
+  const idcliente = getAuthedClientId();
+  if(!idcliente){
+    showError(ordersError, "No se pudo determinar el id del cliente.");
     return;
   }
-  alert(`Compra simulada ✅\n\nArtículos: ${count}\nTotal: ${formatEUR(total)}\n\nGracias por comprar en Atlantis.`);
-  setCart([]);
-  updateCartUI();
-  closeCart();
-});
 
-clearCartBtn.addEventListener("click", () => {
-  setCart([]);
-  updateCartUI();
-});
+  refreshOrdersBtn.disabled = true;
+  try{
+    // Para mostrar títulos, aseguramos catálogo cargado al menos una vez
+    if(!lastBooksPayload){
+      const payload = await fetchBooks();
+      lastBooksPayload = payload;
+    }
+
+    const orders = await fetchOrdersByClient(idcliente);
+    renderOrders(orders);
+  }catch(e){
+    showError(ordersError, e.message || "Error cargando pedidos");
+    ordersTbody.innerHTML = "";
+  }finally{
+    refreshOrdersBtn.disabled = false;
+  }
+}
 
 /* -------------------- EVENTS -------------------- */
 loginForm.addEventListener("submit", async (ev) => {
@@ -380,6 +330,7 @@ loginForm.addEventListener("submit", async (ev) => {
   try{
     const customer = await login(customerId, password);
     setAuthedUI(customer);
+    setPage("catalog");
     await loadBooksAndRender();
   }catch(e){
     showError(loginError, e.message || "Error de autenticación");
@@ -391,6 +342,15 @@ logoutBtn.addEventListener("click", () => {
   setLoggedOutUI();
 });
 
+// Nav
+navCatalogBtn.addEventListener("click", () => setPage("catalog"));
+navOrdersBtn.addEventListener("click", async () => {
+  setPage("orders");
+  await loadOrdersAndRender();
+});
+refreshOrdersBtn.addEventListener("click", loadOrdersAndRender);
+
+// Books
 refreshBtn.addEventListener("click", loadBooksAndRender);
 searchInput.addEventListener("input", () => {
   if(lastBooksPayload) renderBooks(applyFilters(lastBooksPayload.books), lastBooksPayload.total ?? lastBooksPayload.books.length);
@@ -404,11 +364,10 @@ inStockOnly.addEventListener("change", () => {
 
 /* -------------------- INIT -------------------- */
 (function init(){
-  updateCartUI();
-
   const session = getSession();
   if(session?.customer){
     setAuthedUI(session.customer);
+    setPage("catalog");
     loadBooksAndRender();
   }else{
     setLoggedOutUI();
